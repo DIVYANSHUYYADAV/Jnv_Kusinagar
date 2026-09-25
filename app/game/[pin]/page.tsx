@@ -20,54 +20,11 @@ const OPTION_COLORS = [
 ];
 
 function StreakBadge({ streak }: { streak: number }) {
-  const threshold = [...STREAK_THRESHOLDS].reverse().find(t => streak >= t.count);
+  const threshold = [...STREAK_THRESHOLDS].reverse().find((t) => streak >= t.count);
   if (!threshold) return null;
   return (
     <div className="streak-badge animate-scale-in">
       {threshold.emoji} {threshold.label}
-    </div>
-  );
-}
-
-function FeedbackOverlay({
-  isCorrect, points, correctAnswer, explanation, onNext
-}: { isCorrect: boolean; points: number; correctAnswer: string; explanation: string; onNext: () => void }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4"
-      style={{background:"rgba(10,14,39,0.97)"}}>
-      <div className="glass-card p-8 max-w-md w-full text-center animate-scale-in">
-        {/* Result icon */}
-        <div className="text-7xl mb-4 animate-bounce-in">
-          {isCorrect ? "✅" : "❌"}
-        </div>
-        <h2 className="text-3xl font-black mb-2 font-display"
-          style={{color: isCorrect ? "#10B981" : "#EF4444"}}>
-          {isCorrect ? "Correct!" : "Wrong!"}
-        </h2>
-
-        {/* Points */}
-        <div className={`text-5xl font-black mb-6 font-display ${isCorrect ? "text-yellow-400" : "text-red-400"}`}>
-          {points > 0 ? `+${points.toLocaleString()}` : points !== 0 ? points.toLocaleString() : "0"} pts
-        </div>
-
-        {/* Correct answer */}
-        <div className="glass rounded-xl p-4 mb-4">
-          <div className="text-xs text-gray-400 mb-1">Correct Answer</div>
-          <div className="font-bold text-green-400 text-lg">{correctAnswer}</div>
-        </div>
-
-        {/* Explanation */}
-        {explanation && (
-          <div className="glass rounded-xl p-4 mb-6 text-left">
-            <div className="text-xs text-gray-400 mb-1">💡 Explanation</div>
-            <div className="text-sm text-gray-300 leading-relaxed">{explanation}</div>
-          </div>
-        )}
-
-        <button onClick={onNext} className="btn-primary w-full py-3 text-lg rounded-xl">
-          Continue →
-        </button>
-      </div>
     </div>
   );
 }
@@ -85,20 +42,27 @@ function GameContent() {
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [hasAnswered, setHasAnswered] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const [showFeedback, setShowFeedback] = useState(false);
-  const [lastResult, setLastResult] = useState<{isCorrect:boolean;points:number;correctAnswer:string;explanation:string}|null>(null);
-  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [lastResult, setLastResult] = useState<{
+    isCorrect: boolean;
+    points: number;
+    correctAnswer: string;
+    explanation: string;
+  } | null>(null);
   const [connected, setConnected] = useState(true);
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const questionStartRef = useRef<number>(0);
   const answerSubmittedRef = useRef(false);
+  const lastQIndexRef = useRef<number>(-1);
 
   // Subscribe to game
   useEffect(() => {
     if (!pin) return;
     const unsub = subscribeToGame(pin, (g) => {
-      if (!g) { setConnected(false); return; }
+      if (!g) {
+        setConnected(false);
+        return;
+      }
       setConnected(true);
       setGame(g);
 
@@ -113,100 +77,101 @@ function GameContent() {
 
       // Handle question change
       if (g.status === "question" && g.currentQuestion >= 0) {
-        const qIds = g.settings.questionIds;
-        const qIdx = g.currentQuestion;
-        if (qIdx < qIds.length) {
-          const q = (allQuestions as any[]).find(q => q.id === qIds[qIdx]);
-          if (q) {
-            setCurrentQuestion(q);
-            setSelectedAnswer(null);
-            setHasAnswered(false);
-            setShowFeedback(false);
-            answerSubmittedRef.current = false;
-            questionStartRef.current = g.questionStartTime || Date.now();
-            setElapsedSeconds(Math.floor((Date.now() - (g.questionStartTime || Date.now())) / 1000));
+        if (lastQIndexRef.current !== g.currentQuestion) {
+          lastQIndexRef.current = g.currentQuestion;
+          const qIds = g.settings.questionIds;
+          const qIdx = g.currentQuestion;
+          if (qIdx < qIds.length) {
+            const q = (allQuestions as any[]).find((item) => item.id === qIds[qIdx]);
+            if (q) {
+              setCurrentQuestion(q);
+              setSelectedAnswer(null);
+              setHasAnswered(false);
+              answerSubmittedRef.current = false;
+              questionStartRef.current = g.questionStartTime || Date.now();
+              setElapsedSeconds(Math.floor((Date.now() - (g.questionStartTime || Date.now())) / 1000));
+            }
           }
         }
       }
-
-      if (g.status === "leaderboard") {
-        setShowLeaderboard(true);
-        setTimeout(() => setShowLeaderboard(false), 5000);
-      }
     });
     return unsub;
-  }, [pin, playerId]);
+  }, [pin, playerId, router]);
 
-  // Timer
+  // Question Timer
   useEffect(() => {
     if (!game || game.status !== "question" || !game.questionStartTime) return;
+
     timerRef.current = setInterval(() => {
       const elapsed = Math.floor((Date.now() - game.questionStartTime!) / 1000);
       setElapsedSeconds(elapsed);
-      // Auto-submit after time
-      if (elapsed >= (currentQuestion?.timeLimit || 20) && !answerSubmittedRef.current) {
+
+      // Auto-submit when time is up
+      const limit = currentQuestion?.timeLimit || game.settings.timeLimit || 20;
+      if (elapsed >= limit && !answerSubmittedRef.current) {
         handleAutoSubmit();
       }
     }, 500);
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [game?.status, game?.currentQuestion, game?.questionStartTime]);
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [game?.status, game?.currentQuestion, game?.questionStartTime, currentQuestion]);
 
   const handleAutoSubmit = useCallback(() => {
     if (answerSubmittedRef.current) return;
     answerSubmittedRef.current = true;
-    // Time's up — treat as wrong (no answer)
+
     if (!hasAnswered && currentQuestion) {
-      const isCorrect = false;
-      const points = 0;
       setLastResult({
-        isCorrect,
-        points,
+        isCorrect: false,
+        points: 0,
         correctAnswer: currentQuestion.options[currentQuestion.correctAnswer],
         explanation: currentQuestion.explanation,
       });
-      setShowFeedback(true);
+      setHasAnswered(true);
     }
   }, [hasAnswered, currentQuestion]);
 
-  const handleAnswer = useCallback(async (answerIdx: number) => {
-    if (hasAnswered || !currentQuestion || !game || answerSubmittedRef.current) return;
-    answerSubmittedRef.current = true;
+  const handleAnswer = useCallback(
+    async (answerIdx: number) => {
+      if (hasAnswered || !currentQuestion || !game || answerSubmittedRef.current) return;
+      answerSubmittedRef.current = true;
 
-    const responseTimeMs = Date.now() - questionStartRef.current;
-    const isCorrect = answerIdx === currentQuestion.correctAnswer;
+      const responseTimeMs = Date.now() - questionStartRef.current;
+      const isCorrect = answerIdx === currentQuestion.correctAnswer;
 
-    setSelectedAnswer(answerIdx);
-    setHasAnswered(true);
+      setSelectedAnswer(answerIdx);
+      setHasAnswered(true);
 
-    if (timerRef.current) clearInterval(timerRef.current);
+      if (timerRef.current) clearInterval(timerRef.current);
 
-    // Submit to Firebase
-    let pts = 0;
-    try {
-      pts = await submitAnswer(
-        pin,
-        playerId,
-        currentQuestion.id,
-        game.currentQuestion,
-        answerIdx,
+      let pts = 0;
+      try {
+        pts = await submitAnswer(
+          pin,
+          playerId,
+          currentQuestion.id,
+          game.currentQuestion,
+          answerIdx,
+          isCorrect,
+          responseTimeMs,
+          currentQuestion.timeLimit,
+          game.settings.negativeMarking
+        );
+      } catch (e) {
+        console.error("Submit error:", e);
+      }
+
+      setLastResult({
         isCorrect,
-        responseTimeMs,
-        currentQuestion.timeLimit,
-        game.settings.negativeMarking
-      );
-    } catch (e) {
-      console.error("Submit error:", e);
-    }
-
-    setLastResult({
-      isCorrect,
-      points: pts,
-      correctAnswer: currentQuestion.options[currentQuestion.correctAnswer],
-      explanation: currentQuestion.explanation,
-    });
-
-    setTimeout(() => setShowFeedback(true), 300);
-  }, [hasAnswered, currentQuestion, game, pin, playerId]);
+        points: pts,
+        correctAnswer: currentQuestion.options[currentQuestion.correctAnswer],
+        explanation: currentQuestion.explanation,
+      });
+    },
+    [hasAnswered, currentQuestion, game, pin, playerId]
+  );
 
   if (!connected) {
     return (
@@ -226,7 +191,7 @@ function GameContent() {
       <div className="min-h-screen gradient-hero flex items-center justify-center">
         <div className="text-center">
           <div className="w-12 h-12 border-2 border-blue-400/30 border-t-blue-400 rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-400">Connecting to game...</p>
+          <p className="text-gray-400">Loading game...</p>
         </div>
       </div>
     );
@@ -235,23 +200,34 @@ function GameContent() {
   // ─── LOBBY ───────────────────────────────────────────────────────────────
   if (game.status === "lobby") {
     return (
-      <div className="min-h-screen gradient-hero flex flex-col items-center justify-center px-4 py-10">
-        <div className="glass-card p-8 max-w-sm w-full text-center">
-          <Image src="/images/cograd-logo.jpeg" alt="Cograd" width={120} height={40}
-            className="h-10 w-auto object-contain rounded-xl mx-auto mb-6" />
-          <div className="text-5xl mb-3 animate-float">{currentPlayer?.avatar || "🎮"}</div>
-          <h2 className="text-2xl font-black mb-1 font-display">{currentPlayer?.nickname}</h2>
-          <p className="text-gray-400 text-sm mb-6">Waiting for host to start...</p>
+      <div className="min-h-screen gradient-hero flex flex-col items-center justify-center px-4">
+        <div className="glass-card p-8 max-w-sm w-full text-center animate-scale-in">
+          <div className="flex justify-center mb-4">
+            <Image
+              src="/images/cograd-logo.jpeg"
+              alt="Cograd"
+              width={120}
+              height={40}
+              className="h-10 w-auto object-contain rounded-xl"
+            />
+          </div>
+
+          <div className="text-6xl mb-3 animate-float">{currentPlayer?.avatar || "🧠"}</div>
+          <h1 className="text-2xl font-black mb-1 font-display">{currentPlayer?.nickname || "Player"}</h1>
+          <p className="text-green-400 text-sm font-semibold mb-6 flex items-center justify-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-green-400 inline-block animate-ping" />
+            You&apos;re In!
+          </p>
 
           <div className="glass rounded-xl p-4 mb-6">
             <div className="text-xs text-gray-500 mb-1">Game</div>
-            <div className="font-bold text-lg truncate">{game.title}</div>
+            <div className="font-bold text-sm text-gray-300 truncate">{game.title}</div>
           </div>
 
           <div className="flex justify-around mb-6">
             <div className="text-center">
               <div className="text-2xl font-black text-blue-400">
-                {Object.values(game.players || {}).filter(p => !p.kicked).length}
+                {Object.values(game.players || {}).filter((p) => !p.kicked).length}
               </div>
               <div className="text-xs text-gray-500">Players</div>
             </div>
@@ -265,9 +241,7 @@ function GameContent() {
             </div>
           </div>
 
-          <div className="animate-pulse text-gray-500 text-sm">
-            ⏳ Waiting for host to start the game...
-          </div>
+          <div className="animate-pulse text-gray-400 text-sm">⏳ Waiting for host to start the game...</div>
         </div>
       </div>
     );
@@ -280,7 +254,75 @@ function GameContent() {
         <div className="text-center animate-scale-in">
           <div className="text-8xl mb-4 animate-bounce-in">🚀</div>
           <h1 className="text-5xl font-black mb-2 font-display gradient-text">Game Starting!</h1>
-          <p className="text-gray-400">Get ready...</p>
+          <p className="text-gray-400">Get ready for Question 1...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── RESULTS & LEADERBOARD BETWEEN QUESTIONS ─────────────────────────────
+  if (game.status === "results") {
+    const sorted = Object.values(game.players || {})
+      .filter((p) => !p.kicked)
+      .sort((a, b) => (b.score || 0) - (a.score || 0));
+    const myRank = sorted.findIndex((p) => p.id === playerId) + 1;
+
+    return (
+      <div className="min-h-screen gradient-hero flex flex-col items-center justify-center px-4 py-8">
+        <div className="glass-card p-6 max-w-md w-full animate-scale-in">
+          {/* Result card if they answered */}
+          {lastResult ? (
+            <div
+              className={`rounded-2xl p-5 mb-5 text-center border ${
+                lastResult.isCorrect
+                  ? "bg-green-500/10 border-green-500/40 shadow-lg shadow-green-500/10"
+                  : "bg-red-500/10 border-red-500/40 shadow-lg shadow-red-500/10"
+              }`}
+            >
+              <div className="text-4xl mb-1">{lastResult.isCorrect ? "🎉" : "❌"}</div>
+              <h3
+                className={`text-2xl font-black font-display ${
+                  lastResult.isCorrect ? "text-green-400" : "text-red-400"
+                }`}
+              >
+                {lastResult.isCorrect ? "Correct!" : "Wrong!"}
+              </h3>
+              <div className="text-3xl font-black text-yellow-400 my-1 font-display">
+                {lastResult.points > 0 ? `+${lastResult.points.toLocaleString()} pts` : "0 pts"}
+              </div>
+              {!lastResult.isCorrect && lastResult.correctAnswer && (
+                <div className="text-xs text-gray-300 mt-2 bg-black/20 p-2.5 rounded-lg text-left">
+                  <span className="text-gray-400 block mb-0.5">Correct Answer:</span>
+                  <span className="font-bold text-green-400 text-sm">{lastResult.correctAnswer}</span>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="rounded-xl p-4 mb-5 text-center border border-white/10 bg-white/5">
+              <h3 className="text-lg font-bold text-gray-300">Round Review</h3>
+            </div>
+          )}
+
+          {/* Standings Header */}
+          <div className="flex items-center justify-between mb-3 px-1">
+            <h2 className="text-base font-black font-display gradient-text uppercase tracking-wider">
+              🏆 Current Standings
+            </h2>
+            {myRank > 0 && (
+              <span className="text-xs px-2.5 py-1 rounded-full bg-blue-500/20 text-blue-300 font-bold border border-blue-500/30">
+                You: #{myRank} of {sorted.length}
+              </span>
+            )}
+          </div>
+
+          <Leaderboard players={sorted} currentPlayerId={playerId} maxShow={5} />
+
+          <div className="mt-5 pt-4 border-t border-white/10 text-center">
+            <p className="text-xs text-gray-400 animate-pulse flex items-center justify-center gap-2">
+              <span className="inline-block w-2 h-2 rounded-full bg-blue-400 animate-ping" />
+              <span>Next question starting soon...</span>
+            </p>
+          </div>
         </div>
       </div>
     );
@@ -288,16 +330,18 @@ function GameContent() {
 
   // ─── ENDED ───────────────────────────────────────────────────────────────
   if (game.status === "ended") {
-    const players = Object.values(game.players || {}).filter(p => !p.kicked);
-    const sorted = [...players].sort((a,b)=>(b.score||0)-(a.score||0));
-    const myRank = sorted.findIndex(p => p.id === playerId) + 1;
-    const total = (currentPlayer?.correctAnswers||0) + (currentPlayer?.wrongAnswers||0);
-    const accuracy = total > 0 ? Math.round(((currentPlayer?.correctAnswers||0)/total)*100) : 0;
+    const players = Object.values(game.players || {}).filter((p) => !p.kicked);
+    const sorted = [...players].sort((a, b) => (b.score || 0) - (a.score || 0));
+    const myRank = sorted.findIndex((p) => p.id === playerId) + 1;
+    const total = (currentPlayer?.correctAnswers || 0) + (currentPlayer?.wrongAnswers || 0);
+    const accuracy = total > 0 ? Math.round(((currentPlayer?.correctAnswers || 0) / total) * 100) : 0;
 
     return (
       <div className="min-h-screen gradient-hero flex flex-col items-center justify-center px-4 py-10">
         <div className="glass-card p-8 max-w-sm w-full text-center animate-scale-in">
-          <div className="text-6xl mb-4">{myRank === 1 ? "🏆" : myRank === 2 ? "🥈" : myRank === 3 ? "🥉" : "🎮"}</div>
+          <div className="text-6xl mb-4">
+            {myRank === 1 ? "🏆" : myRank === 2 ? "🥈" : myRank === 3 ? "🥉" : "🎮"}
+          </div>
           <h1 className="text-3xl font-black mb-1 font-display gradient-text">Game Complete!</h1>
           <p className="text-gray-400 mb-6">Great effort, {currentPlayer?.nickname}!</p>
 
@@ -307,7 +351,9 @@ function GameContent() {
               <div className="text-xs text-gray-500">Your Rank</div>
             </div>
             <div className="glass rounded-xl p-4">
-              <div className="text-2xl font-black text-blue-400">{(currentPlayer?.score||0).toLocaleString()}</div>
+              <div className="text-2xl font-black text-blue-400">
+                {(currentPlayer?.score || 0).toLocaleString()}
+              </div>
               <div className="text-xs text-gray-500">Total Score</div>
             </div>
             <div className="glass rounded-xl p-4">
@@ -315,7 +361,7 @@ function GameContent() {
               <div className="text-xs text-gray-500">Accuracy</div>
             </div>
             <div className="glass rounded-xl p-4">
-              <div className="text-2xl font-black text-orange-400">{currentPlayer?.maxStreak||0}</div>
+              <div className="text-2xl font-black text-orange-400">{currentPlayer?.maxStreak || 0}</div>
               <div className="text-xs text-gray-500">Best Streak</div>
             </div>
           </div>
@@ -331,39 +377,14 @@ function GameContent() {
     );
   }
 
-  // ─── LEADERBOARD between questions ───────────────────────────────────────
-  if (showLeaderboard && game.settings.showLeaderboard) {
-    const sorted = Object.values(game.players||{}).filter(p=>!p.kicked).sort((a,b)=>(b.score||0)-(a.score||0));
-    return (
-      <div className="min-h-screen gradient-hero flex flex-col items-center justify-center px-4">
-        <div className="glass-card p-8 max-w-sm w-full animate-scale-in">
-          <h2 className="text-2xl font-black text-center mb-6 font-display gradient-text">🏆 Leaderboard</h2>
-          <Leaderboard players={sorted} currentPlayerId={playerId} maxShow={8} />
-          <p className="text-center text-gray-500 text-sm mt-4 animate-pulse">Next question coming up...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // ─── QUESTION ────────────────────────────────────────────────────────────
+  // ─── ACTIVE QUESTION ─────────────────────────────────────────────────────
   if (game.status === "question" && currentQuestion) {
     const qNum = (game.currentQuestion || 0) + 1;
     const qTotal = game.questionCount;
-    const timeLimit = currentQuestion.timeLimit || game.settings.timeLimit;
+    const timeLimit = currentQuestion.timeLimit || game.settings.timeLimit || 20;
 
     return (
       <div className="min-h-screen gradient-hero flex flex-col">
-        {/* Feedback overlay */}
-        {showFeedback && lastResult && (
-          <FeedbackOverlay
-            isCorrect={lastResult.isCorrect}
-            points={lastResult.points}
-            correctAnswer={lastResult.correctAnswer}
-            explanation={lastResult.explanation}
-            onNext={() => setShowFeedback(false)}
-          />
-        )}
-
         {/* Header */}
         <header className="flex items-center justify-between px-4 py-3 border-b border-white/10">
           <div className="text-sm font-medium text-gray-400">
@@ -371,7 +392,9 @@ function GameContent() {
           </div>
           <CircularTimer totalSeconds={timeLimit} elapsedSeconds={elapsedSeconds} size={60} />
           <div className="text-right">
-            <div className="text-sm font-black text-yellow-400">{(currentPlayer?.score||0).toLocaleString()}</div>
+            <div className="text-sm font-black text-yellow-400">
+              {(currentPlayer?.score || 0).toLocaleString()}
+            </div>
             <div className="text-xs text-gray-500">points</div>
           </div>
         </header>
@@ -385,8 +408,10 @@ function GameContent() {
 
         {/* Progress bar */}
         <div className="h-1 bg-white/10">
-          <div className="h-full bg-gradient-to-r from-blue-600 to-purple-600 transition-all duration-1000"
-            style={{width: `${(qNum/qTotal)*100}%`}} />
+          <div
+            className="h-full bg-gradient-to-r from-blue-600 to-purple-600 transition-all duration-1000"
+            style={{ width: `${(qNum / qTotal) * 100}%` }}
+          />
         </div>
 
         {/* Question content */}
@@ -399,14 +424,12 @@ function GameContent() {
             <span className="text-xs text-gray-500">{currentQuestion.concept}</span>
           </div>
 
-          {/* Question */}
+          {/* Question Text */}
           <div className="glass-card p-5 mb-4">
-            <p className="text-lg font-bold leading-relaxed text-white">
-              {currentQuestion.question}
-            </p>
+            <p className="text-lg font-bold leading-relaxed text-white">{currentQuestion.question}</p>
           </div>
 
-          {/* Graph */}
+          {/* Graph visual if available */}
           {currentQuestion.graphData && (
             <div className="flex justify-center mb-4">
               <CoordinatePlane
@@ -418,33 +441,43 @@ function GameContent() {
             </div>
           )}
 
-          {/* Answer options */}
-          <div className="grid grid-cols-1 gap-3 pb-6">
+          {/* Answer confirmation banner if answered */}
+          {hasAnswered && (
+            <div className="glass-card p-3 mb-4 text-center border border-blue-500/30 bg-blue-500/10 animate-fade-in">
+              <p className="text-sm font-bold text-blue-400">
+                ✓ Answer submitted! Waiting for other players...
+              </p>
+            </div>
+          )}
+
+          {/* Options Grid */}
+          <div className="grid grid-cols-2 gap-3 mb-6">
             {currentQuestion.options.map((opt, idx) => {
-              const col = OPTION_COLORS[idx];
               const isSelected = selectedAnswer === idx;
-              const isDisabled = hasAnswered;
+              const color = OPTION_COLORS[idx % OPTION_COLORS.length];
 
               return (
                 <button
                   key={idx}
                   onClick={() => handleAnswer(idx)}
-                  disabled={isDisabled}
-                  aria-label={`Option ${OPTION_LABELS[idx]}: ${opt}`}
-                  className={`answer-option answer-option-${OPTION_LABELS[idx]} ${isSelected ? "selected" : ""} ${isDisabled && !isSelected ? "disabled" : ""}`}
+                  disabled={hasAnswered}
                   style={{
-                    borderColor: isSelected ? col.bg : `rgba(255,255,255,0.1)`,
-                    background: isSelected ? col.light : "rgba(255,255,255,0.04)",
-                    boxShadow: isSelected ? `0 0 20px ${col.border}` : "none",
+                    background: isSelected ? color.bg : color.light,
+                    borderColor: isSelected ? "#fff" : color.border,
+                    transform: isSelected ? "scale(1.02)" : undefined,
                   }}
+                  className={`p-4 rounded-xl border-2 text-left font-medium transition-all active:scale-95 disabled:cursor-not-allowed ${
+                    hasAnswered && !isSelected ? "opacity-40" : ""
+                  }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <span className="text-xl font-black flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center"
-                      style={{background: col.bg, color:"white", fontSize:"14px"}}>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-sm flex-shrink-0"
+                      style={{ background: isSelected ? "#fff" : color.bg, color: isSelected ? "#000" : "#fff" }}
+                    >
                       {OPTION_LABELS[idx]}
                     </span>
-                    <span className="font-medium">{opt}</span>
-                    {isSelected && <span className="ml-auto text-xl">✓</span>}
+                    <span className="text-sm font-semibold leading-snug">{opt}</span>
                   </div>
                 </button>
               );
@@ -460,7 +493,7 @@ function GameContent() {
     <div className="min-h-screen gradient-hero flex items-center justify-center">
       <div className="text-center">
         <div className="w-12 h-12 border-2 border-blue-400/30 border-t-blue-400 rounded-full animate-spin mx-auto mb-4" />
-        <p className="text-gray-400">Loading game state...</p>
+        <p className="text-gray-400">Loading question...</p>
       </div>
     </div>
   );
@@ -468,7 +501,13 @@ function GameContent() {
 
 export default function GamePage() {
   return (
-    <Suspense fallback={<div className="min-h-screen gradient-hero flex items-center justify-center text-white">Loading...</div>}>
+    <Suspense
+      fallback={
+        <div className="min-h-screen gradient-hero flex items-center justify-center text-white">
+          Loading...
+        </div>
+      }
+    >
       <GameContent />
     </Suspense>
   );
