@@ -47,6 +47,7 @@ function GameContent() {
     points: number;
     correctAnswer: string;
     explanation: string;
+    timedOut?: boolean;
   } | null>(null);
   const [connected, setConnected] = useState(true);
 
@@ -75,6 +76,11 @@ function GameContent() {
         }
       }
 
+      // When transitioning to results, clear question timer
+      if (g.status === "results") {
+        if (timerRef.current) clearInterval(timerRef.current);
+      }
+
       // Handle question change
       if (g.status === "question" && g.currentQuestion >= 0) {
         if (lastQIndexRef.current !== g.currentQuestion) {
@@ -87,9 +93,10 @@ function GameContent() {
               setCurrentQuestion(q);
               setSelectedAnswer(null);
               setHasAnswered(false);
+              setLastResult(null);
               answerSubmittedRef.current = false;
               questionStartRef.current = g.questionStartTime || Date.now();
-              setElapsedSeconds(Math.floor((Date.now() - (g.questionStartTime || Date.now())) / 1000));
+              setElapsedSeconds(0);
             }
           }
         }
@@ -98,40 +105,29 @@ function GameContent() {
     return unsub;
   }, [pin, playerId, router]);
 
-  // Question Timer
+  // Question Timer: updates circular timer and visual countdown
   useEffect(() => {
-    if (!game || game.status !== "question" || !game.questionStartTime) return;
+    if (!game || game.status !== "question" || !game.questionStartTime || !currentQuestion) return;
+    const startTime = game.questionStartTime;
+    const limit = currentQuestion.timeLimit || game.settings.timeLimit || 20;
 
-    timerRef.current = setInterval(() => {
-      const elapsed = Math.floor((Date.now() - game.questionStartTime!) / 1000);
-      setElapsedSeconds(elapsed);
+    if (timerRef.current) clearInterval(timerRef.current);
 
-      // Auto-submit when time is up
-      const limit = currentQuestion?.timeLimit || game.settings.timeLimit || 20;
-      if (elapsed >= limit && !answerSubmittedRef.current) {
-        handleAutoSubmit();
+    const intId = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      setElapsedSeconds(Math.min(elapsed, limit));
+
+      if (elapsed >= limit && !hasAnswered) {
+        setHasAnswered(true);
       }
     }, 500);
+    timerRef.current = intId;
 
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
+      clearInterval(intId);
     };
-  }, [game?.status, game?.currentQuestion, game?.questionStartTime, currentQuestion]);
+  }, [game?.status, game?.currentQuestion, game?.questionStartTime, currentQuestion, hasAnswered]);
 
-  const handleAutoSubmit = useCallback(() => {
-    if (answerSubmittedRef.current) return;
-    answerSubmittedRef.current = true;
-
-    if (!hasAnswered && currentQuestion) {
-      setLastResult({
-        isCorrect: false,
-        points: 0,
-        correctAnswer: currentQuestion.options[currentQuestion.correctAnswer],
-        explanation: currentQuestion.explanation,
-      });
-      setHasAnswered(true);
-    }
-  }, [hasAnswered, currentQuestion]);
 
   const handleAnswer = useCallback(
     async (answerIdx: number) => {
@@ -267,33 +263,49 @@ function GameContent() {
       .sort((a, b) => (b.score || 0) - (a.score || 0));
     const myRank = sorted.findIndex((p) => p.id === playerId) + 1;
 
+    const currentQId = game && game.currentQuestion >= 0 ? game.settings.questionIds[game.currentQuestion] : null;
+    const answeredInfo = currentQId ? currentPlayer?.answers?.[currentQId] : null;
+    const reviewResult = lastResult || (answeredInfo ? {
+      isCorrect: answeredInfo.isCorrect,
+      points: answeredInfo.points,
+      correctAnswer: currentQuestion ? currentQuestion.options[currentQuestion.correctAnswer] : "",
+      explanation: currentQuestion?.explanation || "",
+      timedOut: false,
+    } : currentQuestion ? {
+      isCorrect: false,
+      points: 0,
+      correctAnswer: currentQuestion.options[currentQuestion.correctAnswer],
+      explanation: currentQuestion.explanation || "",
+      timedOut: true,
+    } : null);
+
     return (
       <div className="min-h-screen gradient-hero flex flex-col items-center justify-center px-4 py-8">
         <div className="glass-card p-6 max-w-md w-full animate-scale-in">
-          {/* Result card if they answered */}
-          {lastResult ? (
+          {/* Result card */}
+          {reviewResult ? (
             <div
               className={`rounded-2xl p-5 mb-5 text-center border ${
-                lastResult.isCorrect
+                reviewResult.isCorrect
                   ? "bg-green-500/10 border-green-500/40 shadow-lg shadow-green-500/10"
                   : "bg-red-500/10 border-red-500/40 shadow-lg shadow-red-500/10"
               }`}
             >
-              <div className="text-4xl mb-1">{lastResult.isCorrect ? "🎉" : "❌"}</div>
+              <div className="text-4xl mb-1">{reviewResult.isCorrect ? "🎉" : reviewResult.timedOut ? "⏰" : "❌"}</div>
               <h3
                 className={`text-2xl font-black font-display ${
-                  lastResult.isCorrect ? "text-green-400" : "text-red-400"
+                  reviewResult.isCorrect ? "text-green-400" : "text-red-400"
                 }`}
               >
-                {lastResult.isCorrect ? "Correct!" : "Wrong!"}
+                {reviewResult.isCorrect ? "Correct!" : reviewResult.timedOut ? "Time's Up!" : "Wrong!"}
               </h3>
               <div className="text-3xl font-black text-yellow-400 my-1 font-display">
-                {lastResult.points > 0 ? `+${lastResult.points.toLocaleString()} pts` : "0 pts"}
+                {reviewResult.points > 0 ? `+${reviewResult.points.toLocaleString()} pts` : "0 pts"}
               </div>
-              {!lastResult.isCorrect && lastResult.correctAnswer && (
+              {!reviewResult.isCorrect && reviewResult.correctAnswer && (
                 <div className="text-xs text-gray-300 mt-2 bg-black/20 p-2.5 rounded-lg text-left">
                   <span className="text-gray-400 block mb-0.5">Correct Answer:</span>
-                  <span className="font-bold text-green-400 text-sm">{lastResult.correctAnswer}</span>
+                  <span className="font-bold text-green-400 text-sm">{reviewResult.correctAnswer}</span>
                 </div>
               )}
             </div>

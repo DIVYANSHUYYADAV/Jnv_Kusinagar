@@ -34,6 +34,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { action } = body;
+    console.log("[GAME_API]", action, body.pin, body.questionIndex !== undefined ? `qIdx:${body.questionIndex}` : "");
 
     switch (action) {
       case "create": {

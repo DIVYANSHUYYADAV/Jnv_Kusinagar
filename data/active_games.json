@@ -1,4 +1,106 @@
 {
+  "113502": {
+    "pin": "113502",
+    "hostId": "host_verify_all",
+    "title": "5 Question Full Verification Quiz",
+    "topic": "graphs_coordinates",
+    "status": "ended",
+    "settings": {
+      "title": "5 Question Full Verification Quiz",
+      "topic": "graphs_coordinates",
+      "questionIds": [
+        "GC001",
+        "GC002",
+        "GC003",
+        "GC004",
+        "GC005"
+      ],
+      "questionCount": 5,
+      "timeLimit": 10,
+      "difficulty": "mixed",
+      "negativeMarking": false,
+      "negativePoints": 250,
+      "showLeaderboard": true,
+      "soundEnabled": true,
+      "gameMode": "classic",
+      "powerUpsEnabled": true,
+      "showExplanations": true
+    },
+    "currentQuestion": 4,
+    "questionStartTime": 1790330338718,
+    "players": {
+      "player_1790330327264_u1evzu4": {
+        "id": "player_1790330327264_u1evzu4",
+        "nickname": "DevTester",
+        "avatar": "⚡",
+        "score": 7000,
+        "streak": 5,
+        "maxStreak": 5,
+        "correctAnswers": 5,
+        "wrongAnswers": 0,
+        "totalResponseTime": 10000,
+        "answers": {
+          "GC001": {
+            "questionId": "GC001",
+            "questionIndex": 0,
+            "answer": 2,
+            "isCorrect": true,
+            "responseTimeMs": 2000,
+            "points": 1400,
+            "submittedAt": 1790330332521
+          },
+          "GC002": {
+            "questionId": "GC002",
+            "questionIndex": 1,
+            "answer": 2,
+            "isCorrect": true,
+            "responseTimeMs": 2000,
+            "points": 1400,
+            "submittedAt": 1790330334580
+          },
+          "GC003": {
+            "questionId": "GC003",
+            "questionIndex": 2,
+            "answer": 2,
+            "isCorrect": true,
+            "responseTimeMs": 2000,
+            "points": 1400,
+            "submittedAt": 1790330336638
+          },
+          "GC004": {
+            "questionId": "GC004",
+            "questionIndex": 3,
+            "answer": 2,
+            "isCorrect": true,
+            "responseTimeMs": 2000,
+            "points": 1400,
+            "submittedAt": 1790330338697
+          },
+          "GC005": {
+            "questionId": "GC005",
+            "questionIndex": 4,
+            "answer": 2,
+            "isCorrect": true,
+            "responseTimeMs": 2000,
+            "points": 1400,
+            "submittedAt": 1790330340750
+          }
+        },
+        "joinedAt": 1790330327264,
+        "status": "active",
+        "kicked": false,
+        "powerUps": {
+          "doublePoints": 1,
+          "safeAnswer": 1,
+          "timeBoost": 0
+        }
+      }
+    },
+    "createdAt": 1790330327235,
+    "startedAt": 1790330327279,
+    "endedAt": 1790330340772,
+    "questionCount": 5
+  },
   "133693": {
     "pin": "133693",
     "hostId": "host_test_transitions",
@@ -87,6 +189,108 @@
     },
     "createdAt": 1790328329637,
     "startedAt": null,
+    "endedAt": null,
+    "questionCount": 5
+  },
+  "254072": {
+    "pin": "254072",
+    "hostId": "host_sim_test",
+    "title": "Simulation Test",
+    "topic": "graphs_coordinates",
+    "status": "results",
+    "settings": {
+      "title": "Simulation Test",
+      "topic": "graphs_coordinates",
+      "questionIds": [
+        "GC001",
+        "GC002",
+        "GC003",
+        "GC004",
+        "GC005"
+      ],
+      "questionCount": 5,
+      "timeLimit": 20,
+      "difficulty": "mixed",
+      "negativeMarking": false,
+      "negativePoints": 250,
+      "showLeaderboard": true,
+      "soundEnabled": true,
+      "gameMode": "classic",
+      "powerUpsEnabled": true,
+      "showExplanations": true
+    },
+    "currentQuestion": 4,
+    "questionStartTime": 1790329772770,
+    "players": {
+      "player_1790329769071_7360hns": {
+        "id": "player_1790329769071_7360hns",
+        "nickname": "SimPlayer",
+        "avatar": "🚀",
+        "score": 7250,
+        "streak": 5,
+        "maxStreak": 5,
+        "correctAnswers": 5,
+        "wrongAnswers": 0,
+        "totalResponseTime": 10000,
+        "answers": {
+          "GC001": {
+            "questionId": "GC001",
+            "questionIndex": 0,
+            "answer": 1,
+            "isCorrect": true,
+            "responseTimeMs": 2000,
+            "points": 1450,
+            "submittedAt": 1790329772634
+          },
+          "GC002": {
+            "questionId": "GC002",
+            "questionIndex": 1,
+            "answer": 1,
+            "isCorrect": true,
+            "responseTimeMs": 2000,
+            "points": 1450,
+            "submittedAt": 1790329772674
+          },
+          "GC003": {
+            "questionId": "GC003",
+            "questionIndex": 2,
+            "answer": 1,
+            "isCorrect": true,
+            "responseTimeMs": 2000,
+            "points": 1450,
+            "submittedAt": 1790329772714
+          },
+          "GC004": {
+            "questionId": "GC004",
+            "questionIndex": 3,
+            "answer": 1,
+            "isCorrect": true,
+            "responseTimeMs": 2000,
+            "points": 1450,
+            "submittedAt": 1790329772748
+          },
+          "GC005": {
+            "questionId": "GC005",
+            "questionIndex": 4,
+            "answer": 1,
+            "isCorrect": true,
+            "responseTimeMs": 2000,
+            "points": 1450,
+            "submittedAt": 1790329772781
+          }
+        },
+        "joinedAt": 1790329769071,
+        "status": "active",
+        "kicked": false,
+        "powerUps": {
+          "doublePoints": 1,
+          "safeAnswer": 1,
+          "timeBoost": 0
+        }
+      }
+    },
+    "createdAt": 1790329769027,
+    "startedAt": 1790329769095,
     "endedAt": null,
     "questionCount": 5
   },

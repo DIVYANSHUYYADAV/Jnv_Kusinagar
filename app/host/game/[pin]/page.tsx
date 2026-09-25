@@ -38,7 +38,18 @@ export default function HostGamePage() {
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const resultsTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const autoNextFiredRef = useRef(false);
+  const allAnsweredTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Guards to prevent duplicate advancement
+  const isAdvancingRef = useRef(false);
+  const autoShowResultsFiredRef = useRef<number>(-1);
+  const autoNextQuestionFiredRef = useRef<number>(-1);
+
+  // Keep latest game and players in refs for fresh callback access
+  const gameRef = useRef<Game | null>(null);
+  gameRef.current = game;
+  const playersRef = useRef<Record<string, Player>>({});
+  playersRef.current = players;
 
   useEffect(() => {
     if (!pin) return;
@@ -58,105 +69,148 @@ export default function HostGamePage() {
     game && game.currentQuestion >= 0
       ? (allQuestions as any[]).find((q) => q.id === game.settings.questionIds[game.currentQuestion])
       : null;
-  const answeredCount = currentQ
-    ? activePlayers.filter((p) => p.answers?.[currentQ.id]).length
+  const answeredCount = currentQ && game
+    ? activePlayers.filter((p) => {
+        const a = p.answers?.[currentQ.id];
+        return a && a.questionIndex === game.currentQuestion;
+      }).length
     : 0;
 
-  // Advance from question to results
+  // Advance from question to results (idempotent, guarded)
   const handleShowResults = useCallback(async () => {
-    if (!game) return;
-    await showResults(pin);
-  }, [game, pin]);
-
-  // Advance from results to next question or end
-  const handleGoToNextQuestion = useCallback(async () => {
-    if (!game) return;
-    if (resultsTimerRef.current) clearInterval(resultsTimerRef.current);
-    const nextIdx = (game.currentQuestion || 0) + 1;
-    if (nextIdx >= game.questionCount) {
-      await endGame(pin);
-    } else {
-      await nextQuestion(pin, nextIdx);
+    const g = gameRef.current;
+    if (!g || g.status !== "question" || isAdvancingRef.current) return;
+    isAdvancingRef.current = true;
+    try {
+      if (timerRef.current) clearInterval(timerRef.current);
+      if (allAnsweredTimeoutRef.current) clearTimeout(allAnsweredTimeoutRef.current);
+      await showResults(pin);
+    } finally {
+      isAdvancingRef.current = false;
     }
-  }, [game, pin]);
+  }, [pin]);
 
-  // Main question timer & auto-advance when answered or time up
-  useEffect(() => {
-    if (!game) return;
-
-    if (game.status === "question" && game.questionStartTime) {
-      autoNextFiredRef.current = false;
+  // Advance from results to next question or end (idempotent, guarded)
+  const handleGoToNextQuestion = useCallback(async () => {
+    const g = gameRef.current;
+    if (!g || g.status !== "results" || isAdvancingRef.current) return;
+    isAdvancingRef.current = true;
+    try {
       if (resultsTimerRef.current) clearInterval(resultsTimerRef.current);
+      const nextIdx = (g.currentQuestion || 0) + 1;
+      if (nextIdx >= g.questionCount) {
+        await endGame(pin);
+      } else {
+        await nextQuestion(pin, nextIdx);
+      }
+    } finally {
+      isAdvancingRef.current = false;
+    }
+  }, [pin]);
 
-      timerRef.current = setInterval(() => {
-        const elapsed = Math.floor((Date.now() - game.questionStartTime!) / 1000);
-        setElapsedSeconds(elapsed);
-        const limit = game.settings.timeLimit || 20;
+  // 1. Question Timer: runs during "question" status
+  useEffect(() => {
+    if (game?.status !== "question" || !game?.questionStartTime) return;
+    const currentIdx = game.currentQuestion;
+    const startTime = game.questionStartTime;
+    const limit = currentQ?.timeLimit || game.settings.timeLimit || 20;
 
-        // Auto-show results when time is up
-        if (elapsed >= limit && !autoNextFiredRef.current) {
-          autoNextFiredRef.current = true;
+    if (resultsTimerRef.current) clearInterval(resultsTimerRef.current);
+    if (timerRef.current) clearInterval(timerRef.current);
+
+    const intId = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      setElapsedSeconds(elapsed);
+
+      // Auto-show results when time is up
+      if (elapsed >= limit) {
+        if (autoShowResultsFiredRef.current !== currentIdx) {
+          autoShowResultsFiredRef.current = currentIdx;
           handleShowResults();
         }
-      }, 500);
+      }
+    }, 500);
+    timerRef.current = intId;
+
+    return () => {
+      clearInterval(intId);
+    };
+  }, [game?.status, game?.currentQuestion, game?.questionStartTime, currentQ?.timeLimit, game?.settings.timeLimit, handleShowResults]);
+
+  // 2. All Players Answered Auto-Advance: triggers results 1.5s after all players submit
+  useEffect(() => {
+    if (game?.status !== "question" || !currentQ) return;
+    const currentIdx = game.currentQuestion;
+    if (currentIdx < 0) return;
+
+    const active = Object.values(players).filter((p) => !p.kicked);
+    if (active.length === 0) return;
+
+    const allAnswered = active.every((p) => {
+      const a = p.answers?.[currentQ.id];
+      return a && a.questionIndex === currentIdx;
+    });
+
+    if (allAnswered && autoShowResultsFiredRef.current !== currentIdx) {
+      if (allAnsweredTimeoutRef.current) clearTimeout(allAnsweredTimeoutRef.current);
+      allAnsweredTimeoutRef.current = setTimeout(() => {
+        if (autoShowResultsFiredRef.current !== currentIdx) {
+          autoShowResultsFiredRef.current = currentIdx;
+          handleShowResults();
+        }
+      }, 1500);
+      return () => {
+        if (allAnsweredTimeoutRef.current) clearTimeout(allAnsweredTimeoutRef.current);
+      };
     }
+  }, [game?.status, game?.currentQuestion, currentQ, players, handleShowResults]);
 
-    // Auto-advance to results when ALL active players have answered
-    if (
-      game.status === "question" &&
-      activePlayers.length > 0 &&
-      answeredCount >= activePlayers.length &&
-      !autoNextFiredRef.current
-    ) {
-      autoNextFiredRef.current = true;
-      const timeoutId = setTimeout(() => {
-        handleShowResults();
-      }, 1200);
-      return () => clearTimeout(timeoutId);
-    }
+  // 3. Results Countdown: runs a reliable countdown from 6 to 0
+  useEffect(() => {
+    if (game?.status !== "results") return;
+    const currentIdx = game.currentQuestion;
 
-    // When in "results" state, run a visible countdown to next question
-    if (game.status === "results") {
-      if (timerRef.current) clearInterval(timerRef.current);
-      setResultsCountdown(6);
+    if (timerRef.current) clearInterval(timerRef.current);
+    if (allAnsweredTimeoutRef.current) clearTimeout(allAnsweredTimeoutRef.current);
+    if (resultsTimerRef.current) clearInterval(resultsTimerRef.current);
 
-      resultsTimerRef.current = setInterval(() => {
-        setResultsCountdown((prev) => {
-          if (prev <= 1) {
-            if (resultsTimerRef.current) clearInterval(resultsTimerRef.current);
-            handleGoToNextQuestion();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
+    setResultsCountdown(6);
+    let remaining = 6;
 
+    const intId = setInterval(() => {
+      remaining -= 1;
+      setResultsCountdown(remaining);
+      if (remaining <= 0) {
+        clearInterval(intId);
+        if (autoNextQuestionFiredRef.current !== currentIdx) {
+          autoNextQuestionFiredRef.current = currentIdx;
+          handleGoToNextQuestion();
+        }
+      }
+    }, 1000);
+    resultsTimerRef.current = intId;
+
+    return () => {
+      clearInterval(intId);
+    };
+  }, [game?.status, game?.currentQuestion, handleGoToNextQuestion]);
+
+  // 4. Game Ended & Lobby View Synchronizer
+  useEffect(() => {
+    if (!game) return;
+    if (game.status === "lobby") setView("lobby");
     if (game.status === "ended") {
       if (timerRef.current) clearInterval(timerRef.current);
       if (resultsTimerRef.current) clearInterval(resultsTimerRef.current);
+      if (allAnsweredTimeoutRef.current) clearTimeout(allAnsweredTimeoutRef.current);
       const qs = game.settings.questionIds
         .map((id) => (allQuestions as any[]).find((q) => q.id === id))
         .filter(Boolean);
       setAnalytics(computeAnalytics(players, qs));
       setView("analytics");
     }
+  }, [game?.status, game?.settings.questionIds, players]);
 
-    if (game.status === "lobby") setView("lobby");
-
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-      if (resultsTimerRef.current) clearInterval(resultsTimerRef.current);
-    };
-  }, [
-    game?.status,
-    game?.questionStartTime,
-    game?.currentQuestion,
-    answeredCount,
-    activePlayers.length,
-    handleShowResults,
-    handleGoToNextQuestion,
-  ]);
 
   const handleStart = async () => {
     if (!game) return;
