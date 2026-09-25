@@ -144,15 +144,21 @@ export async function startGame(pin: string): Promise<void> {
   const data = await res.json();
   notifyChannel(cleanPin, data.game);
 
+  // Authoritative host auto-advance to Question 0 after 3 seconds
+  setTimeout(async () => {
+    try {
+      await nextQuestion(cleanPin, 0);
+    } catch {
+      // ignore
+    }
+  }, 3000);
+
   if (isFirebaseConfigured()) {
     try {
       await update(ref(rtdb, `games/${cleanPin}`), {
         status: "starting",
         startedAt: Date.now(),
       });
-      setTimeout(async () => {
-        await nextQuestion(cleanPin, 0);
-      }, 3000);
     } catch {
       // ignore
     }

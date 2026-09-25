@@ -90,14 +90,14 @@ export default function HostGamePage() {
     }
   }, [pin]);
 
-  // Advance from results to next question or end (idempotent, guarded)
+  // Advance from results (or starting) to next question or end (idempotent, guarded)
   const handleGoToNextQuestion = useCallback(async () => {
     const g = gameRef.current;
-    if (!g || g.status !== "results" || isAdvancingRef.current) return;
+    if (!g || (g.status !== "results" && g.status !== "starting") || isAdvancingRef.current) return;
     isAdvancingRef.current = true;
     try {
       if (resultsTimerRef.current) clearInterval(resultsTimerRef.current);
-      const nextIdx = (g.currentQuestion || 0) + 1;
+      const nextIdx = g.status === "starting" ? 0 : (g.currentQuestion || 0) + 1;
       if (nextIdx >= g.questionCount) {
         await endGame(pin);
       } else {
@@ -211,6 +211,18 @@ export default function HostGamePage() {
     }
   }, [game?.status, game?.settings.questionIds, players]);
 
+  // Advance from starting state to Question 0 after 3 seconds
+  useEffect(() => {
+    if (!isHost || game?.status !== "starting") return;
+    const t = setTimeout(async () => {
+      try {
+        await nextQuestion(pin, 0);
+      } catch {
+        // ignore
+      }
+    }, 3000);
+    return () => clearTimeout(t);
+  }, [isHost, game?.status, pin]);
 
   const handleStart = async () => {
     if (!game) return;
@@ -752,7 +764,15 @@ export default function HostGamePage() {
             <div className="glass-card p-10 text-center animate-scale-in">
               <div className="text-7xl mb-4 animate-bounce">🚀</div>
               <h2 className="text-3xl font-black gradient-text font-display mb-2">Get Ready!</h2>
-              <p className="text-gray-400">First question starting in 3 seconds...</p>
+              <p className="text-gray-400 mb-5">First question starting in 3 seconds...</p>
+              {isHost && (
+                <button
+                  onClick={() => nextQuestion(pin, 0)}
+                  className="px-6 py-2.5 rounded-xl font-bold text-sm bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:opacity-90 active:scale-95 transition-all shadow-lg"
+                >
+                  Start Question 1 Now →
+                </button>
+              )}
             </div>
           )}
         </div>

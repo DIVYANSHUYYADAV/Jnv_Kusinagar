@@ -294,6 +294,59 @@
     "endedAt": null,
     "questionCount": 5
   },
+  "333981": {
+    "pin": "333981",
+    "hostId": "host_start_test",
+    "title": "Start Test",
+    "topic": "graphs_coordinates",
+    "status": "question",
+    "settings": {
+      "title": "Start Test",
+      "topic": "graphs_coordinates",
+      "questionIds": [
+        "GC001",
+        "GC002"
+      ],
+      "questionCount": 2,
+      "timeLimit": 15,
+      "difficulty": "mixed",
+      "negativeMarking": false,
+      "negativePoints": 250,
+      "showLeaderboard": true,
+      "soundEnabled": true,
+      "gameMode": "classic",
+      "powerUpsEnabled": true,
+      "showExplanations": true
+    },
+    "currentQuestion": 0,
+    "questionStartTime": 1790330859157,
+    "players": {
+      "player_1790330856142_hc4de8a": {
+        "id": "player_1790330856142_hc4de8a",
+        "nickname": "Tester",
+        "avatar": "🚀",
+        "score": 0,
+        "streak": 0,
+        "maxStreak": 0,
+        "correctAnswers": 0,
+        "wrongAnswers": 0,
+        "totalResponseTime": 0,
+        "answers": {},
+        "joinedAt": 1790330856142,
+        "status": "active",
+        "kicked": false,
+        "powerUps": {
+          "doublePoints": 1,
+          "safeAnswer": 1,
+          "timeBoost": 0
+        }
+      }
+    },
+    "createdAt": 1790330856108,
+    "startedAt": 1790330856155,
+    "endedAt": null,
+    "questionCount": 2
+  },
   "589131": {
     "pin": "589131",
     "hostId": "host_test_123",
