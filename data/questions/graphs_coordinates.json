@@ -1,0 +1,443 @@
+[
+  {
+    "id": "GC001",
+    "type": "mcq",
+    "question": "A point is plotted at (5, 0). Where does this point lie?",
+    "options": ["In Quadrant I", "On the y-axis", "On the x-axis", "At the origin"],
+    "correctAnswer": 2,
+    "difficulty": "easy",
+    "concept": "Axes and special points",
+    "explanation": "Any point of the form (x, 0) lies on the x-axis, because its y-coordinate is 0. The point (5, 0) is 5 units to the right of the origin along the x-axis.",
+    "timeLimit": 20,
+    "points": 1000,
+    "graphData": null
+  },
+  {
+    "id": "GC002",
+    "type": "mcq",
+    "question": "Which quadrant contains the point (-4, 7)?",
+    "options": ["Quadrant I", "Quadrant II", "Quadrant III", "Quadrant IV"],
+    "correctAnswer": 1,
+    "difficulty": "easy",
+    "concept": "Quadrants",
+    "explanation": "Quadrant II contains points where x is negative and y is positive. Since -4 < 0 and 7 > 0, the point (-4, 7) is in Quadrant II.",
+    "timeLimit": 20,
+    "points": 1000,
+    "graphData": null
+  },
+  {
+    "id": "GC003",
+    "type": "mcq",
+    "question": "The x-coordinate of a point is also called its ___.",
+    "options": ["Ordinate", "Abscissa", "Origin", "Intercept"],
+    "correctAnswer": 1,
+    "difficulty": "easy",
+    "concept": "Terminology",
+    "explanation": "The x-coordinate of a point is called its abscissa, while the y-coordinate is called its ordinate.",
+    "timeLimit": 20,
+    "points": 1000,
+    "graphData": null
+  },
+  {
+    "id": "GC004",
+    "type": "mcq",
+    "question": "What are the coordinates of the origin?",
+    "options": ["(1, 1)", "(0, 1)", "(1, 0)", "(0, 0)"],
+    "correctAnswer": 3,
+    "difficulty": "easy",
+    "concept": "Origin",
+    "explanation": "The origin is where the x-axis and y-axis intersect. Its coordinates are always (0, 0).",
+    "timeLimit": 15,
+    "points": 1000,
+    "graphData": null
+  },
+  {
+    "id": "GC005",
+    "type": "mcq",
+    "question": "In which quadrant are both coordinates negative?",
+    "options": ["Quadrant I", "Quadrant II", "Quadrant III", "Quadrant IV"],
+    "correctAnswer": 2,
+    "difficulty": "easy",
+    "concept": "Quadrants",
+    "explanation": "In Quadrant III, both x and y coordinates are negative. This is the lower-left region of the coordinate plane.",
+    "timeLimit": 20,
+    "points": 1000,
+    "graphData": null
+  },
+  {
+    "id": "GC006",
+    "type": "truefalse",
+    "question": "The point (0, -6) lies on the y-axis.",
+    "options": ["True", "False"],
+    "correctAnswer": 0,
+    "difficulty": "easy",
+    "concept": "Axes and special points",
+    "explanation": "True! Any point of the form (0, y) lies on the y-axis. The point (0, -6) is 6 units below the origin on the y-axis.",
+    "timeLimit": 15,
+    "points": 1000,
+    "graphData": null
+  },
+  {
+    "id": "GC007",
+    "type": "mcq",
+    "question": "Which point lies in Quadrant IV?",
+    "options": ["(-2, 5)", "(3, -4)", "(-1, -3)", "(6, 2)"],
+    "correctAnswer": 1,
+    "difficulty": "easy",
+    "concept": "Quadrants",
+    "explanation": "Quadrant IV contains points where x is positive and y is negative. The point (3, -4) has x=3>0 and y=-4<0.",
+    "timeLimit": 20,
+    "points": 1000,
+    "graphData": null
+  },
+  {
+    "id": "GC008",
+    "type": "mcq",
+    "question": "How many quadrants does a coordinate plane have?",
+    "options": ["2", "3", "4", "6"],
+    "correctAnswer": 2,
+    "difficulty": "easy",
+    "concept": "Coordinate plane basics",
+    "explanation": "A coordinate plane is divided into 4 quadrants by the x-axis and y-axis, numbered I, II, III, and IV.",
+    "timeLimit": 15,
+    "points": 1000,
+    "graphData": null
+  },
+  {
+    "id": "GC009",
+    "type": "mcq",
+    "question": "A point P is at (2, 8). What is the distance of P from the x-axis?",
+    "options": ["2 units", "8 units", "10 units", "6 units"],
+    "correctAnswer": 1,
+    "difficulty": "easy",
+    "concept": "Distance from axes",
+    "explanation": "The distance from the x-axis equals the absolute value of the y-coordinate. For P=(2,8), the distance is |8| = 8 units.",
+    "timeLimit": 20,
+    "points": 1000,
+    "graphData": null
+  },
+  {
+    "id": "GC010",
+    "type": "truefalse",
+    "question": "The point (-3, -3) lies in Quadrant III.",
+    "options": ["True", "False"],
+    "correctAnswer": 0,
+    "difficulty": "easy",
+    "concept": "Quadrants",
+    "explanation": "True! In Quadrant III, both coordinates are negative. Since -3<0 and -3<0, the point (-3,-3) is in Quadrant III.",
+    "timeLimit": 15,
+    "points": 1000,
+    "graphData": null
+  },
+  {
+    "id": "GC011",
+    "type": "mcq",
+    "question": "If the x-coordinate of a point is 0 and y-coordinate is non-zero, the point lies on:",
+    "options": ["The x-axis", "The y-axis", "The origin", "Quadrant I"],
+    "correctAnswer": 1,
+    "difficulty": "easy",
+    "concept": "Axes",
+    "explanation": "A point with x=0 and y≠0 lies on the y-axis. The y-axis is the vertical axis where all points have x-coordinate equal to 0.",
+    "timeLimit": 20,
+    "points": 1000,
+    "graphData": null
+  },
+  {
+    "id": "GC012",
+    "type": "mcq",
+    "question": "The coordinates of a point are (-5, 3). What is the distance of this point from the y-axis?",
+    "options": ["3 units", "5 units", "8 units", "2 units"],
+    "correctAnswer": 1,
+    "difficulty": "easy",
+    "concept": "Distance from axes",
+    "explanation": "The distance from the y-axis equals |x|. For (-5,3), |-5| = 5 units.",
+    "timeLimit": 20,
+    "points": 1000,
+    "graphData": null
+  },
+  {
+    "id": "GC013",
+    "type": "mcq",
+    "question": "Point A is at (3, 4) and Point B is at (3, -2). Which statement is true?",
+    "options": ["A and B have the same y-coordinate", "A and B have the same x-coordinate", "A and B are in the same quadrant", "A and B are equidistant from the origin"],
+    "correctAnswer": 1,
+    "difficulty": "medium",
+    "concept": "Comparing coordinates",
+    "explanation": "Both A(3,4) and B(3,-2) have x-coordinate=3. They lie on the same vertical line x=3. A is in Q1, B is in Q4.",
+    "timeLimit": 20,
+    "points": 1000,
+    "graphData": null
+  },
+  {
+    "id": "GC014",
+    "type": "coordinate",
+    "question": "Four points are marked: P(2,3), Q(-3,1), R(4,-2), S(-1,-4). Which point is closest to the origin?",
+    "options": ["P(2, 3)", "Q(-3, 1)", "R(4, -2)", "S(-1, -4)"],
+    "correctAnswer": 1,
+    "difficulty": "medium",
+    "concept": "Distance from origin",
+    "explanation": "Distance = sqrt(x^2+y^2). P: sqrt(13)~3.6, Q: sqrt(10)~3.2, R: sqrt(20)~4.5, S: sqrt(17)~4.1. Q is closest.",
+    "timeLimit": 30,
+    "points": 1000,
+    "graphData": {
+      "points": [
+        { "label": "P", "x": 2, "y": 3, "color": "#FF6B6B" },
+        { "label": "Q", "x": -3, "y": 1, "color": "#4ECDC4" },
+        { "label": "R", "x": 4, "y": -2, "color": "#45B7D1" },
+        { "label": "S", "x": -1, "y": -4, "color": "#FFA07A" }
+      ],
+      "gridRange": 6
+    }
+  },
+  {
+    "id": "GC015",
+    "type": "mcq",
+    "question": "Which of the following points has its y-coordinate twice its x-coordinate?",
+    "options": ["(3, 5)", "(2, 4)", "(4, 2)", "(-3, 6)"],
+    "correctAnswer": 1,
+    "difficulty": "medium",
+    "concept": "Coordinate relationships",
+    "explanation": "We need y=2x. Check: (2,4): 4=2x2=4. Correct! (-3,6): 6 vs 2x(-3)=-6. Not equal.",
+    "timeLimit": 25,
+    "points": 1000,
+    "graphData": null
+  },
+  {
+    "id": "GC016",
+    "type": "mcq",
+    "question": "A rectangle has vertices at (1,1), (5,1), (5,4), and (1,4). What is its area?",
+    "options": ["12 sq units", "15 sq units", "20 sq units", "16 sq units"],
+    "correctAnswer": 0,
+    "difficulty": "medium",
+    "concept": "Area using coordinates",
+    "explanation": "Length = 5-1 = 4 units, Width = 4-1 = 3 units. Area = 4 x 3 = 12 square units.",
+    "timeLimit": 30,
+    "points": 1000,
+    "graphData": {
+      "points": [
+        { "label": "A", "x": 1, "y": 1, "color": "#FF6B6B" },
+        { "label": "B", "x": 5, "y": 1, "color": "#FF6B6B" },
+        { "label": "C", "x": 5, "y": 4, "color": "#FF6B6B" },
+        { "label": "D", "x": 1, "y": 4, "color": "#FF6B6B" }
+      ],
+      "polygon": true,
+      "gridRange": 7
+    }
+  },
+  {
+    "id": "GC017",
+    "type": "mcq",
+    "question": "If point P(x, y) is reflected across the x-axis, its new coordinates become:",
+    "options": ["(-x, y)", "(x, -y)", "(-x, -y)", "(y, x)"],
+    "correctAnswer": 1,
+    "difficulty": "medium",
+    "concept": "Reflections",
+    "explanation": "When reflected across the x-axis, x stays same but y changes sign. So (x,y) becomes (x,-y).",
+    "timeLimit": 25,
+    "points": 1000,
+    "graphData": null
+  },
+  {
+    "id": "GC018",
+    "type": "mcq",
+    "question": "Three points A(0,0), B(4,0), and C(0,3) form a triangle. What is the area?",
+    "options": ["6 sq units", "12 sq units", "7 sq units", "8 sq units"],
+    "correctAnswer": 0,
+    "difficulty": "medium",
+    "concept": "Area of triangle",
+    "explanation": "Base AB = 4 units, Height OC = 3 units. Area = (1/2) x 4 x 3 = 6 square units.",
+    "timeLimit": 30,
+    "points": 1000,
+    "graphData": {
+      "points": [
+        { "label": "A", "x": 0, "y": 0, "color": "#FF6B6B" },
+        { "label": "B", "x": 4, "y": 0, "color": "#4ECDC4" },
+        { "label": "C", "x": 0, "y": 3, "color": "#45B7D1" }
+      ],
+      "polygon": true,
+      "gridRange": 6
+    }
+  },
+  {
+    "id": "GC019",
+    "type": "coordinate",
+    "question": "Points A(1,3), B(-2,3), C(-2,-1), D(1,-1) are plotted. Which best describes this figure?",
+    "options": ["A square", "A rectangle", "A parallelogram", "A trapezoid"],
+    "correctAnswer": 1,
+    "difficulty": "medium",
+    "concept": "Geometric figures",
+    "explanation": "Width=|1-(-2)|=3 units, Height=|3-(-1)|=4 units. Width != Height, so it is a rectangle (all angles 90 degrees).",
+    "timeLimit": 30,
+    "points": 1000,
+    "graphData": {
+      "points": [
+        { "label": "A", "x": 1, "y": 3, "color": "#FF6B6B" },
+        { "label": "B", "x": -2, "y": 3, "color": "#4ECDC4" },
+        { "label": "C", "x": -2, "y": -1, "color": "#45B7D1" },
+        { "label": "D", "x": 1, "y": -1, "color": "#FFA07A" }
+      ],
+      "polygon": true,
+      "gridRange": 5
+    }
+  },
+  {
+    "id": "GC020",
+    "type": "mcq",
+    "question": "The midpoint of the segment joining (2, 6) and (8, 2) is:",
+    "options": ["(5, 4)", "(6, 4)", "(4, 5)", "(5, 5)"],
+    "correctAnswer": 0,
+    "difficulty": "medium",
+    "concept": "Midpoint",
+    "explanation": "Midpoint = ((2+8)/2, (6+2)/2) = (5, 4).",
+    "timeLimit": 25,
+    "points": 1000,
+    "graphData": null
+  },
+  {
+    "id": "GC021",
+    "type": "mcq",
+    "question": "A point P is in Quadrant II with distance 3 from y-axis and 5 from x-axis. Its coordinates are:",
+    "options": ["(3, 5)", "(-3, 5)", "(3, -5)", "(-5, 3)"],
+    "correctAnswer": 1,
+    "difficulty": "medium",
+    "concept": "Quadrants and distances",
+    "explanation": "In Q2: x<0, y>0. Distance from y-axis=|x|=3, so x=-3. Distance from x-axis=|y|=5, so y=5. Coordinates: (-3,5).",
+    "timeLimit": 25,
+    "points": 1000,
+    "graphData": null
+  },
+  {
+    "id": "GC022",
+    "type": "truefalse",
+    "question": "If both coordinates of a point are equal (like (4,4) or (-3,-3)), the point always lies on the line y = x.",
+    "options": ["True", "False"],
+    "correctAnswer": 0,
+    "difficulty": "medium",
+    "concept": "Points on a line",
+    "explanation": "True! The line y=x contains all points where y-coordinate equals x-coordinate. Both (4,4) and (-3,-3) satisfy y=x.",
+    "timeLimit": 20,
+    "points": 1000,
+    "graphData": null
+  },
+  {
+    "id": "GC023",
+    "type": "mcq",
+    "question": "Point M is the midpoint of AB where A=(-4,2) and B=(6,-8). Coordinates of M:",
+    "options": ["(1, -3)", "(2, -6)", "(1, -5)", "(0, -3)"],
+    "correctAnswer": 0,
+    "difficulty": "medium",
+    "concept": "Midpoint formula",
+    "explanation": "M = ((-4+6)/2, (2+(-8))/2) = (2/2, -6/2) = (1, -3).",
+    "timeLimit": 25,
+    "points": 1000,
+    "graphData": null
+  },
+  {
+    "id": "GC024",
+    "type": "mcq",
+    "question": "Which set of points all lie on the y-axis?",
+    "options": ["(0,2), (0,-5), (0,7)", "(2,0), (-5,0), (7,0)", "(1,0), (0,1), (2,2)", "(3,3), (-3,3), (3,-3)"],
+    "correctAnswer": 0,
+    "difficulty": "medium",
+    "concept": "Points on axes",
+    "explanation": "Points on y-axis have x=0. The set (0,2),(0,-5),(0,7) all have x=0. The second set lies on the x-axis.",
+    "timeLimit": 25,
+    "points": 1000,
+    "graphData": null
+  },
+  {
+    "id": "GC025",
+    "type": "coordinate",
+    "question": "Points A(3,5), B(-3,5), C(-3,-5), D(3,-5) are plotted. What is the perimeter of the figure?",
+    "options": ["16 units", "20 units", "32 units", "24 units"],
+    "correctAnswer": 2,
+    "difficulty": "hard",
+    "concept": "Perimeter using coordinates",
+    "explanation": "Width=|3-(-3)|=6 units, Height=|5-(-5)|=10 units. Perimeter = 2(6+10) = 32 units.",
+    "timeLimit": 45,
+    "points": 1000,
+    "graphData": {
+      "points": [
+        { "label": "A", "x": 3, "y": 5, "color": "#FF6B6B" },
+        { "label": "B", "x": -3, "y": 5, "color": "#4ECDC4" },
+        { "label": "C", "x": -3, "y": -5, "color": "#45B7D1" },
+        { "label": "D", "x": 3, "y": -5, "color": "#FFA07A" }
+      ],
+      "polygon": true,
+      "gridRange": 7
+    }
+  },
+  {
+    "id": "GC026",
+    "type": "mcq",
+    "question": "If P(a, b) is reflected across the y-axis, the image P' has coordinates:",
+    "options": ["(a, -b)", "(-a, b)", "(-a, -b)", "(b, a)"],
+    "correctAnswer": 1,
+    "difficulty": "hard",
+    "concept": "Reflections",
+    "explanation": "When reflecting across the y-axis, y stays the same but x changes sign. So P(a,b) becomes P'(-a,b).",
+    "timeLimit": 30,
+    "points": 1000,
+    "graphData": null
+  },
+  {
+    "id": "GC027",
+    "type": "mcq",
+    "question": "Point Q is at (-6, 8). After translating 4 units right and 3 units down, its new coordinates are:",
+    "options": ["(-2, 5)", "(-10, 11)", "(-2, 11)", "(-10, 5)"],
+    "correctAnswer": 0,
+    "difficulty": "hard",
+    "concept": "Translations",
+    "explanation": "Moving 4 right: x = -6+4 = -2. Moving 3 down: y = 8-3 = 5. New coordinates: (-2, 5).",
+    "timeLimit": 30,
+    "points": 1000,
+    "graphData": null
+  },
+  {
+    "id": "GC028",
+    "type": "mcq",
+    "question": "Point A is at (1, 2) and point B is at (4, 6). What is the distance AB?",
+    "options": ["5 units", "7 units", "sqrt(7) units", "25 units"],
+    "correctAnswer": 0,
+    "difficulty": "hard",
+    "concept": "Distance formula",
+    "explanation": "Distance = sqrt((4-1)^2 + (6-2)^2) = sqrt(9+16) = sqrt(25) = 5 units.",
+    "timeLimit": 45,
+    "points": 1000,
+    "graphData": null
+  },
+  {
+    "id": "GC029",
+    "type": "mcq",
+    "question": "A right triangle has vertices at (0,0), (6,0), and (0,8). What is the length of the hypotenuse?",
+    "options": ["10 units", "14 units", "sqrt(10) units", "48 units"],
+    "correctAnswer": 0,
+    "difficulty": "hard",
+    "concept": "Distance formula",
+    "explanation": "Hypotenuse connects (6,0) and (0,8). Distance = sqrt((6-0)^2+(0-8)^2) = sqrt(36+64) = sqrt(100) = 10 units.",
+    "timeLimit": 45,
+    "points": 1000,
+    "graphData": {
+      "points": [
+        { "label": "O", "x": 0, "y": 0, "color": "#FF6B6B" },
+        { "label": "A", "x": 6, "y": 0, "color": "#4ECDC4" },
+        { "label": "B", "x": 0, "y": 8, "color": "#45B7D1" }
+      ],
+      "polygon": true,
+      "gridRange": 10
+    }
+  },
+  {
+    "id": "GC030",
+    "type": "mcq",
+    "question": "A point P(x, y) satisfies x + y = 0. Which is a possible location of P?",
+    "options": ["Quadrant I only", "On the line y = x", "Quadrant II or IV (on line y = -x)", "On the x-axis only"],
+    "correctAnswer": 2,
+    "difficulty": "hard",
+    "concept": "Points satisfying equations",
+    "explanation": "x+y=0 means y=-x. Such points lie on y=-x, which passes through Q2 (e.g., (-3,3)) and Q4 (e.g., (4,-4)), and the origin.",
+    "timeLimit": 45,
+    "points": 1000,
+    "graphData": null
+  }
+]

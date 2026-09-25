@@ -1,0 +1,19 @@
+{
+  "rules": {
+    "games": {
+      "$pin": {
+        ".read": true,
+        ".write": true,
+        "players": {
+          "$playerId": {
+            "answers": {
+              "$questionId": {
+                ".write": "!data.exists()"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
