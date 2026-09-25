@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { QRCodeSVG } from "qrcode.react";
 import { subscribeToGame, subscribeToPlayers, startGame, nextQuestion, showResults, endGame, kickPlayer, computeLeaderboard, computeAnalytics } from "@/lib/gameEngine";
+import { getAdminSession } from "@/lib/adminAuth";
 import type { Game, Player } from "@/types/game";
 import allQuestions from "@/data/questions/graphs_coordinates.json";
 import CircularTimer from "@/components/game/CircularTimer";
@@ -323,11 +324,18 @@ export default function HostGamePage() {
             <Image src="/images/cograd-logo.jpeg" alt="Cograd" width={100} height={34} className="h-9 w-auto object-contain rounded-lg"/>
             <span className="font-bold font-display">Quest · Lobby</span>
           </div>
-          {isHost && (
-            <button onClick={() => setView("game")} className="text-gray-400 text-sm hover:text-white">
-              Skip to Game →
-            </button>
-          )}
+          <div className="flex items-center gap-3">
+            {isHost && (
+              <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/30 text-xs font-semibold text-yellow-400">
+                👑 Admin Host
+              </span>
+            )}
+            {isHost && (
+              <button onClick={() => setView("game")} className="text-gray-400 text-sm hover:text-white">
+                Skip to Game →
+              </button>
+            )}
+          </div>
         </nav>
 
         <div className="max-w-4xl mx-auto px-6 py-8">

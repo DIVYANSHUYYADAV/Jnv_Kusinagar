@@ -15,6 +15,14 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:000000000:web:abc123",
 };
 
+export function isFirebaseConfigured(): boolean {
+  const key = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+  const url = process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL;
+  if (!key || key === "YOUR_API_KEY_HERE" || key === "demo-key") return false;
+  if (!url || url.includes("YOUR_PROJECT_ID") || url.includes("demo-default-rtdb")) return false;
+  return true;
+}
+
 // Initialize Firebase (singleton pattern)
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 

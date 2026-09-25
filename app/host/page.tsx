@@ -1,9 +1,10 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { createGame, generateHostId } from "@/lib/gameEngine";
+import { getAdminSession, logoutAdmin, type AdminUser } from "@/lib/adminAuth";
 import questions from "@/data/questions/graphs_coordinates.json";
 import type { GameSettings, GameMode } from "@/types/game";
 import toast from "react-hot-toast";
@@ -17,6 +18,8 @@ const DIFFICULTY_OPTIONS = ["mixed", "easy", "medium", "hard"] as const;
 
 export default function HostPage() {
   const router = useRouter();
+  const [admin, setAdmin] = useState<AdminUser | null>(null);
+  const [authChecking, setAuthChecking] = useState(true);
   const [loading, setLoading] = useState(false);
   const [settings, setSettings] = useState<GameSettings>({
     title: "Cograd Quest — Graphs & Coordinates",
@@ -34,6 +37,16 @@ export default function HostPage() {
     showExplanations: true,
   });
 
+  useEffect(() => {
+    const session = getAdminSession();
+    if (!session) {
+      router.replace("/host/login");
+    } else {
+      setAdmin(session);
+      setAuthChecking(false);
+    }
+  }, [router]);
+
   const filteredQuestions = () => {
     let qs = questions as any[];
     if (settings.difficulty !== "mixed") {
@@ -43,6 +56,12 @@ export default function HostPage() {
   };
 
   const handleCreate = async () => {
+    if (!getAdminSession()) {
+      toast.error("Admin session expired. Please log in again.");
+      router.push("/host/login");
+      return;
+    }
+
     if (!settings.title.trim()) {
       toast.error("Please enter a quiz title");
       return;
@@ -66,7 +85,24 @@ export default function HostPage() {
     }
   };
 
+  const handleLogout = () => {
+    logoutAdmin();
+    toast.success("Logged out successfully");
+    router.push("/host/login");
+  };
+
   const qCount = filteredQuestions().length;
+
+  if (authChecking) {
+    return (
+      <div className="min-h-screen gradient-hero flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-2 border-blue-400/30 border-t-blue-400 rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-400 font-medium">Verifying Admin Authorization...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <main className="min-h-screen gradient-hero">
@@ -77,13 +113,27 @@ export default function HostPage() {
             className="h-9 w-auto object-contain rounded-lg" />
           <span className="text-white font-bold font-display">Quest</span>
         </Link>
-        <Link href="/" className="text-gray-400 hover:text-white text-sm transition-colors">← Back</Link>
+        <div className="flex items-center gap-3">
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-xs">
+            <span className="text-yellow-400">👑</span>
+            <span className="font-semibold text-gray-200">{admin?.name || "Admin"}</span>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="btn-secondary text-xs py-1.5 px-3 hover:border-red-500/50 hover:text-red-300 transition-colors"
+          >
+            Sign Out
+          </button>
+        </div>
       </nav>
 
       <div className="max-w-2xl mx-auto px-6 py-10">
         <div className="text-center mb-10">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-semibold uppercase tracking-wider mb-3">
+            <span>👑</span> Admin Host Console
+          </div>
           <h1 className="text-4xl font-black mb-2 font-display gradient-text">Host a Game</h1>
-          <p className="text-gray-400">Set up your quiz and share the PIN with students</p>
+          <p className="text-gray-400">Set up your quiz and generate the PIN for your students</p>
         </div>
 
         <div className="space-y-6">
