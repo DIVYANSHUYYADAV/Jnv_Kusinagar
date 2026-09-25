@@ -1,0 +1,131 @@
+{
+  "589131": {
+    "pin": "589131",
+    "hostId": "host_test_123",
+    "title": "Test Localhost Quiz",
+    "topic": "graphs_coordinates",
+    "status": "lobby",
+    "settings": {
+      "title": "Test Localhost Quiz",
+      "topic": "graphs_coordinates",
+      "questionIds": [
+        "GC001",
+        "GC002"
+      ],
+      "questionCount": 2,
+      "timeLimit": 20,
+      "difficulty": "mixed",
+      "negativeMarking": false,
+      "negativePoints": 250,
+      "showLeaderboard": true,
+      "soundEnabled": true,
+      "gameMode": "classic",
+      "powerUpsEnabled": true,
+      "showExplanations": true
+    },
+    "currentQuestion": -1,
+    "questionStartTime": null,
+    "players": {
+      "player_1790324877821_3a0d5z4": {
+        "id": "player_1790324877821_3a0d5z4",
+        "nickname": "Alex",
+        "avatar": "🚀",
+        "score": 1413,
+        "streak": 1,
+        "maxStreak": 1,
+        "correctAnswers": 1,
+        "wrongAnswers": 0,
+        "totalResponseTime": 3500,
+        "answers": {
+          "GC001": {
+            "questionId": "GC001",
+            "questionIndex": 0,
+            "answer": 2,
+            "isCorrect": true,
+            "responseTimeMs": 3500,
+            "points": 1413,
+            "submittedAt": 1790324892675
+          }
+        },
+        "joinedAt": 1790324877821,
+        "status": "active",
+        "kicked": false,
+        "powerUps": {
+          "doublePoints": 1,
+          "safeAnswer": 1,
+          "timeBoost": 0
+        }
+      }
+    },
+    "createdAt": 1790324867170,
+    "startedAt": null,
+    "endedAt": null,
+    "questionCount": 2
+  },
+  "593480": {
+    "pin": "593480",
+    "hostId": "host_1790324937976_nk8o306",
+    "title": "Cograd Quest — Graphs & Coordinates",
+    "topic": "graphs_coordinates",
+    "status": "lobby",
+    "settings": {
+      "title": "Cograd Quest — Graphs & Coordinates",
+      "topic": "graphs_coordinates",
+      "questionIds": [
+        "GC001",
+        "GC002",
+        "GC003",
+        "GC004",
+        "GC005",
+        "GC006",
+        "GC007",
+        "GC008",
+        "GC009",
+        "GC010",
+        "GC011",
+        "GC012",
+        "GC013",
+        "GC014",
+        "GC015"
+      ],
+      "questionCount": 15,
+      "timeLimit": 20,
+      "difficulty": "mixed",
+      "negativeMarking": false,
+      "negativePoints": 250,
+      "showLeaderboard": true,
+      "soundEnabled": true,
+      "gameMode": "classic",
+      "powerUpsEnabled": true,
+      "showExplanations": true
+    },
+    "currentQuestion": -1,
+    "questionStartTime": null,
+    "players": {
+      "player_1790327635023_cvdrlux": {
+        "id": "player_1790327635023_cvdrlux",
+        "nickname": "Rohan",
+        "avatar": "⚡",
+        "score": 0,
+        "streak": 0,
+        "maxStreak": 0,
+        "correctAnswers": 0,
+        "wrongAnswers": 0,
+        "totalResponseTime": 0,
+        "answers": {},
+        "joinedAt": 1790327635023,
+        "status": "active",
+        "kicked": false,
+        "powerUps": {
+          "doublePoints": 1,
+          "safeAnswer": 1,
+          "timeBoost": 0
+        }
+      }
+    },
+    "createdAt": 1790324937999,
+    "startedAt": null,
+    "endedAt": null,
+    "questionCount": 15
+  }
+}

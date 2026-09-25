@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import {
   localCreateGame,
   localGetGame,
+  localListActiveGames,
   localStartGame,
   localNextQuestion,
   localShowResults,
@@ -14,12 +15,18 @@ import {
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const pin = searchParams.get("pin");
+  const list = searchParams.get("list");
+
+  if (list === "true" || pin === "list" || pin === "all") {
+    return NextResponse.json({ activeGames: localListActiveGames() });
+  }
 
   if (!pin) {
     return NextResponse.json({ error: "PIN is required" }, { status: 400 });
   }
 
-  const game = localGetGame(pin);
+  const cleanPin = pin.trim();
+  const game = localGetGame(cleanPin);
   return NextResponse.json({ game });
 }
 
@@ -43,7 +50,8 @@ export async function POST(request: Request) {
         if (!pin || !nickname) {
           return NextResponse.json({ error: "Missing pin or nickname" }, { status: 400 });
         }
-        const res = localJoinGame(pin, nickname, avatar || "🧠");
+        const cleanPin = pin.trim();
+        const res = localJoinGame(cleanPin, nickname, avatar || "🧠");
         if (!res.success) {
           return NextResponse.json(res, { status: 400 });
         }

@@ -25,7 +25,7 @@ export function generateHostId(): string {
 function notifyChannel(pin: string, game?: Game | null) {
   if (typeof window !== "undefined" && "BroadcastChannel" in window) {
     try {
-      const ch = new BroadcastChannel(`cograd_${pin}`);
+      const ch = new BroadcastChannel(`cograd_${pin.trim()}`);
       ch.postMessage({ type: "GAME_UPDATE", game });
       setTimeout(() => ch.close(), 100);
     } catch {
@@ -55,43 +55,60 @@ export function calculateScore(
   return doublePoints ? total * 2 : total;
 }
 
-// ---- HOST ACTIONS ----
+// ---- GAME LOOKUP ----
 
-export async function createGame(settings: GameSettings, hostId: string): Promise<string> {
-  // Try Firebase only if actually configured
+export async function checkGameExists(pin: string): Promise<{ exists: boolean; game?: Game; error?: string }> {
+  const cleanPin = pin.trim();
+  if (!cleanPin || cleanPin.length !== 6) {
+    return { exists: false, error: "Please enter a 6-digit PIN." };
+  }
+
+  // 1. Check local server
+  try {
+    const res = await fetch(`/api/game?pin=${cleanPin}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.game) {
+        return { exists: true, game: data.game };
+      }
+    }
+  } catch (err) {
+    console.warn("Local check failed:", err);
+  }
+
+  // 2. Check Firebase if configured
   if (isFirebaseConfigured()) {
     try {
-      let pin = generatePin();
-      for (let i = 0; i < 10; i++) {
-        const existing = await get(ref(rtdb, `games/${pin}`));
-        if (!existing.exists()) break;
-        pin = generatePin();
+      const gameRef = ref(rtdb, `games/${cleanPin}`);
+      const snapshot = await get(gameRef);
+      if (snapshot.exists()) {
+        return { exists: true, game: snapshot.val() as Game };
       }
-
-      const gameData: Game = {
-        pin,
-        hostId,
-        title: settings.title,
-        topic: settings.topic,
-        status: "lobby",
-        settings,
-        currentQuestion: -1,
-        questionStartTime: null,
-        players: {},
-        createdAt: Date.now(),
-        startedAt: null,
-        endedAt: null,
-        questionCount: settings.questionIds.length,
-      };
-
-      await set(ref(rtdb, `games/${pin}`), gameData);
-      return pin;
     } catch (err) {
-      console.warn("Firebase create failed, falling back to local store:", err);
+      console.warn("Firebase lookup failed:", err);
     }
   }
 
-  // Local multiplayer fallback
+  return { exists: false, error: "Game not found. Make sure the host has created the game." };
+}
+
+export async function getActiveGames(): Promise<Array<{ pin: string; title: string; playerCount: number; status: string }>> {
+  try {
+    const res = await fetch(`/api/game?list=true`);
+    if (res.ok) {
+      const data = await res.json();
+      return data.activeGames || [];
+    }
+  } catch {
+    // ignore
+  }
+  return [];
+}
+
+// ---- HOST ACTIONS ----
+
+export async function createGame(settings: GameSettings, hostId: string): Promise<string> {
+  // Always create locally so localhost multiplayer is 100% reliable
   const res = await fetch("/api/game", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -101,119 +118,131 @@ export async function createGame(settings: GameSettings, hostId: string): Promis
   if (!res.ok || !data.pin) {
     throw new Error(data.error || "Failed to create game locally.");
   }
-  notifyChannel(data.pin, data.game);
-  return data.pin;
+
+  const pin = data.pin;
+  notifyChannel(pin, data.game);
+
+  // Also sync to Firebase in background if configured
+  if (isFirebaseConfigured()) {
+    try {
+      await set(ref(rtdb, `games/${pin}`), data.game);
+    } catch (err) {
+      console.warn("Firebase sync failed (continuing with local engine):", err);
+    }
+  }
+
+  return pin;
 }
 
 export async function startGame(pin: string): Promise<void> {
+  const cleanPin = pin.trim();
+  const res = await fetch("/api/game", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "start", pin: cleanPin }),
+  });
+  const data = await res.json();
+  notifyChannel(cleanPin, data.game);
+
   if (isFirebaseConfigured()) {
     try {
-      await update(ref(rtdb, `games/${pin}`), {
+      await update(ref(rtdb, `games/${cleanPin}`), {
         status: "starting",
         startedAt: Date.now(),
       });
       setTimeout(async () => {
-        await nextQuestion(pin, 0);
+        await nextQuestion(cleanPin, 0);
       }, 3000);
-      return;
-    } catch (err) {
-      console.warn("Firebase startGame failed, falling back to local:", err);
+    } catch {
+      // ignore
     }
   }
-
-  const res = await fetch("/api/game", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ action: "start", pin }),
-  });
-  const data = await res.json();
-  notifyChannel(pin, data.game);
 }
 
 export async function nextQuestion(pin: string, questionIndex: number): Promise<void> {
+  const cleanPin = pin.trim();
+  const res = await fetch("/api/game", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "nextQuestion", pin: cleanPin, questionIndex }),
+  });
+  const data = await res.json();
+  notifyChannel(cleanPin, data.game);
+
   if (isFirebaseConfigured()) {
     try {
-      await update(ref(rtdb, `games/${pin}`), {
+      await update(ref(rtdb, `games/${cleanPin}`), {
         status: "question",
         currentQuestion: questionIndex,
         questionStartTime: Date.now(),
       });
-      return;
-    } catch (err) {
-      console.warn("Firebase nextQuestion failed, falling back to local:", err);
+    } catch {
+      // ignore
     }
   }
-
-  const res = await fetch("/api/game", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ action: "nextQuestion", pin, questionIndex }),
-  });
-  const data = await res.json();
-  notifyChannel(pin, data.game);
 }
 
 export async function showResults(pin: string): Promise<void> {
-  if (isFirebaseConfigured()) {
-    try {
-      await update(ref(rtdb, `games/${pin}`), { status: "results" });
-      return;
-    } catch (err) {
-      console.warn("Firebase showResults failed, falling back to local:", err);
-    }
-  }
-
+  const cleanPin = pin.trim();
   const res = await fetch("/api/game", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ action: "showResults", pin }),
+    body: JSON.stringify({ action: "showResults", pin: cleanPin }),
   });
   const data = await res.json();
-  notifyChannel(pin, data.game);
+  notifyChannel(cleanPin, data.game);
+
+  if (isFirebaseConfigured()) {
+    try {
+      await update(ref(rtdb, `games/${cleanPin}`), { status: "results" });
+    } catch {
+      // ignore
+    }
+  }
 }
 
 export async function endGame(pin: string): Promise<void> {
+  const cleanPin = pin.trim();
+  const res = await fetch("/api/game", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "endGame", pin: cleanPin }),
+  });
+  const data = await res.json();
+  notifyChannel(cleanPin, data.game);
+
   if (isFirebaseConfigured()) {
     try {
-      await update(ref(rtdb, `games/${pin}`), {
+      await update(ref(rtdb, `games/${cleanPin}`), {
         status: "ended",
         endedAt: Date.now(),
       });
-      return;
-    } catch (err) {
-      console.warn("Firebase endGame failed, falling back to local:", err);
+    } catch {
+      // ignore
     }
   }
-
-  const res = await fetch("/api/game", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ action: "endGame", pin }),
-  });
-  const data = await res.json();
-  notifyChannel(pin, data.game);
 }
 
 export async function kickPlayer(pin: string, playerId: string): Promise<void> {
-  if (isFirebaseConfigured()) {
-    try {
-      await update(ref(rtdb, `games/${pin}/players/${playerId}`), {
-        kicked: true,
-        status: "kicked",
-      });
-      return;
-    } catch (err) {
-      console.warn("Firebase kickPlayer failed, falling back to local:", err);
-    }
-  }
-
+  const cleanPin = pin.trim();
   const res = await fetch("/api/game", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ action: "kickPlayer", pin, playerId }),
+    body: JSON.stringify({ action: "kickPlayer", pin: cleanPin, playerId }),
   });
   const data = await res.json();
-  notifyChannel(pin, data.game);
+  notifyChannel(cleanPin, data.game);
+
+  if (isFirebaseConfigured()) {
+    try {
+      await update(ref(rtdb, `games/${cleanPin}/players/${playerId}`), {
+        kicked: true,
+        status: "kicked",
+      });
+    } catch {
+      // ignore
+    }
+  }
 }
 
 // ---- PLAYER ACTIONS ----
@@ -223,74 +252,92 @@ export async function joinGame(
   nickname: string,
   avatar: string
 ): Promise<{ success: boolean; playerId?: string; error?: string }> {
-  if (isFirebaseConfigured()) {
-    try {
-      const gameRef = ref(rtdb, `games/${pin}`);
-      const snapshot = await get(gameRef);
+  const cleanPin = pin.trim();
+  const cleanNick = nickname.trim();
 
-      if (!snapshot.exists()) {
-        return { success: false, error: "Game not found. Check your PIN." };
-      }
-
-      const game = snapshot.val() as Game;
-
-      if (game.status === "ended") {
-        return { success: false, error: "This game has already ended." };
-      }
-
-      if (game.status !== "lobby") {
-        return { success: false, error: "Game has already started. You cannot join now." };
-      }
-
-      const players = game.players || {};
-      const duplicateNick = Object.values(players).find(
-        (p: any) => p.nickname.toLowerCase() === nickname.toLowerCase() && !p.kicked
-      );
-      if (duplicateNick) {
-        return { success: false, error: "Nickname already taken. Choose another." };
-      }
-
-      const playerId = generatePlayerId();
-      const playerData: Player = {
-        id: playerId,
-        nickname,
-        avatar,
-        score: 0,
-        streak: 0,
-        maxStreak: 0,
-        correctAnswers: 0,
-        wrongAnswers: 0,
-        totalResponseTime: 0,
-        answers: {},
-        joinedAt: Date.now(),
-        status: "active",
-        kicked: false,
-        powerUps: { doublePoints: 1, safeAnswer: 1, timeBoost: 0 },
-      };
-
-      await set(ref(rtdb, `games/${pin}/players/${playerId}`), playerData);
-      return { success: true, playerId };
-    } catch (err: any) {
-      console.warn("Firebase joinGame failed, falling back to local:", err);
-    }
-  }
-
-  // Local multiplayer join
+  // 1. Try Local Game first
   try {
     const res = await fetch("/api/game", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "join", pin, nickname, avatar }),
+      body: JSON.stringify({ action: "join", pin: cleanPin, nickname: cleanNick, avatar }),
     });
     const data = await res.json();
-    if (!res.ok || !data.success) {
-      return { success: false, error: data.error || "Failed to join game." };
+    if (res.ok && data.success) {
+      notifyChannel(cleanPin, data.game);
+
+      // If Firebase is configured, mirror to Firebase in background
+      if (isFirebaseConfigured()) {
+        try {
+          await set(ref(rtdb, `games/${cleanPin}/players/${data.playerId}`), data.game.players[data.playerId]);
+        } catch {
+          // ignore
+        }
+      }
+
+      return { success: true, playerId: data.playerId };
     }
-    notifyChannel(pin, data.game);
-    return { success: true, playerId: data.playerId };
+
+    // If error is about nickname or game state, return that
+    if (data.error && data.error !== "Game not found. Check your PIN.") {
+      return { success: false, error: data.error };
+    }
   } catch (err: any) {
-    return { success: false, error: err.message || "Failed to join game." };
+    console.warn("Local join failed, checking fallback:", err);
   }
+
+  // 2. Fallback to Firebase only if local didn't find the game and Firebase is configured
+  if (isFirebaseConfigured()) {
+    try {
+      const gameRef = ref(rtdb, `games/${cleanPin}`);
+      const snapshot = await get(gameRef);
+
+      if (snapshot.exists()) {
+        const game = snapshot.val() as Game;
+
+        if (game.status === "ended") {
+          return { success: false, error: "This game has already ended." };
+        }
+
+        if (game.status !== "lobby") {
+          return { success: false, error: "Game has already started. You cannot join now." };
+        }
+
+        const players = game.players || {};
+        const duplicateNick = Object.values(players).find(
+          (p: any) => p.nickname.toLowerCase() === cleanNick.toLowerCase() && !p.kicked
+        );
+        if (duplicateNick) {
+          return { success: false, error: "Nickname already taken. Choose another." };
+        }
+
+        const playerId = generatePlayerId();
+        const playerData: Player = {
+          id: playerId,
+          nickname: cleanNick,
+          avatar,
+          score: 0,
+          streak: 0,
+          maxStreak: 0,
+          correctAnswers: 0,
+          wrongAnswers: 0,
+          totalResponseTime: 0,
+          answers: {},
+          joinedAt: Date.now(),
+          status: "active",
+          kicked: false,
+          powerUps: { doublePoints: 1, safeAnswer: 1, timeBoost: 0 },
+        };
+
+        await set(ref(rtdb, `games/${cleanPin}/players/${playerId}`), playerData);
+        return { success: true, playerId };
+      }
+    } catch (err: any) {
+      console.warn("Firebase joinGame error:", err);
+    }
+  }
+
+  return { success: false, error: `Game PIN "${cleanPin}" not found. Please check with the host.` };
 }
 
 export async function submitAnswer(
@@ -305,6 +352,7 @@ export async function submitAnswer(
   negativeMarking: boolean,
   useDoublePoints: boolean = false
 ): Promise<number> {
+  const cleanPin = pin.trim();
   const points = calculateScore(
     isCorrect,
     responseTimeMs,
@@ -315,58 +363,14 @@ export async function submitAnswer(
     useDoublePoints
   );
 
-  if (isFirebaseConfigured()) {
-    try {
-      const answerData: Answer = {
-        questionId,
-        questionIndex,
-        answer: answerIndex,
-        isCorrect,
-        responseTimeMs,
-        points,
-        submittedAt: Date.now(),
-      };
-
-      const playerRef = ref(rtdb, `games/${pin}/players/${playerId}`);
-      const snapshot = await get(playerRef);
-      if (!snapshot.exists()) return 0;
-
-      const player = snapshot.val() as Player;
-      if (player.answers?.[questionId]) {
-        return 0;
-      }
-
-      const newScore = (player.score || 0) + points;
-      const newStreak = isCorrect ? (player.streak || 0) + 1 : 0;
-      const maxStreak = Math.max(player.maxStreak || 0, newStreak);
-      const newCorrect = (player.correctAnswers || 0) + (isCorrect ? 1 : 0);
-      const newWrong = (player.wrongAnswers || 0) + (!isCorrect ? 1 : 0);
-      const newTotalTime = (player.totalResponseTime || 0) + responseTimeMs;
-
-      await update(playerRef, {
-        score: newScore,
-        streak: newStreak,
-        maxStreak,
-        correctAnswers: newCorrect,
-        wrongAnswers: newWrong,
-        totalResponseTime: newTotalTime,
-        [`answers/${questionId}`]: answerData,
-      });
-
-      return points;
-    } catch (err) {
-      console.warn("Firebase submitAnswer failed, falling back to local:", err);
-    }
-  }
-
-  // Local multiplayer submit
+  // 1. Submit to local
   try {
     const res = await fetch("/api/game", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         action: "submitAnswer",
-        pin,
+        pin: cleanPin,
         playerId,
         questionId,
         questionIndex,
@@ -379,54 +383,94 @@ export async function submitAnswer(
       }),
     });
     const data = await res.json();
-    notifyChannel(pin, data.game);
-    return data.points ?? points;
+    notifyChannel(cleanPin, data.game);
+    if (data.points !== undefined) {
+      return data.points;
+    }
   } catch {
-    return points;
+    // fallback
   }
+
+  // 2. Submit to Firebase if configured
+  if (isFirebaseConfigured()) {
+    try {
+      const answerData: Answer = {
+        questionId,
+        questionIndex,
+        answer: answerIndex,
+        isCorrect,
+        responseTimeMs,
+        points,
+        submittedAt: Date.now(),
+      };
+
+      const playerRef = ref(rtdb, `games/${cleanPin}/players/${playerId}`);
+      const snapshot = await get(playerRef);
+      if (snapshot.exists()) {
+        const player = snapshot.val() as Player;
+        if (!player.answers?.[questionId]) {
+          const newScore = (player.score || 0) + points;
+          const newStreak = isCorrect ? (player.streak || 0) + 1 : 0;
+          const maxStreak = Math.max(player.maxStreak || 0, newStreak);
+          const newCorrect = (player.correctAnswers || 0) + (isCorrect ? 1 : 0);
+          const newWrong = (player.wrongAnswers || 0) + (!isCorrect ? 1 : 0);
+          const newTotalTime = (player.totalResponseTime || 0) + responseTimeMs;
+
+          await update(playerRef, {
+            score: newScore,
+            streak: newStreak,
+            maxStreak,
+            correctAnswers: newCorrect,
+            wrongAnswers: newWrong,
+            totalResponseTime: newTotalTime,
+            [`answers/${questionId}`]: answerData,
+          });
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  return points;
 }
 
 // ---- REALTIME SUBSCRIPTIONS ----
 
 export function subscribeToGame(pin: string, callback: (game: Game | null) => void) {
-  if (isFirebaseConfigured()) {
-    try {
-      const gameRef = ref(rtdb, `games/${pin}`);
-      onValue(gameRef, (snapshot) => {
-        callback(snapshot.exists() ? snapshot.val() : null);
-      });
-      return () => off(gameRef);
-    } catch (err) {
-      console.warn("Firebase subscribeToGame failed, using local polling:", err);
-    }
-  }
-
-  // Local Polling + BroadcastChannel
+  const cleanPin = pin.trim();
   let active = true;
+  let lastKnownGame: Game | null = null;
 
   const fetchState = async () => {
     if (!active) return;
     try {
-      const res = await fetch(`/api/game?pin=${pin}`);
+      const res = await fetch(`/api/game?pin=${cleanPin}`);
       if (res.ok) {
         const data = await res.json();
-        if (active) callback(data.game || null);
+        if (active && data.game) {
+          lastKnownGame = data.game;
+          callback(data.game);
+        }
       }
     } catch {
       // ignore
     }
   };
 
+  // Initial fetch and polling
   fetchState();
   const pollInterval = setInterval(fetchState, 750);
 
+  // Instant local multi-tab sync via BroadcastChannel
   let channel: BroadcastChannel | null = null;
   if (typeof window !== "undefined" && "BroadcastChannel" in window) {
     try {
-      channel = new BroadcastChannel(`cograd_${pin}`);
+      channel = new BroadcastChannel(`cograd_${cleanPin}`);
       channel.onmessage = (event) => {
         if (!active) return;
         if (event.data?.game) {
+          lastKnownGame = event.data.game;
           callback(event.data.game);
         } else {
           fetchState();
@@ -437,12 +481,29 @@ export function subscribeToGame(pin: string, callback: (game: Game | null) => vo
     }
   }
 
+  // Firebase listener as secondary if available
+  let firebaseUnsub: (() => void) | null = null;
+  if (isFirebaseConfigured()) {
+    try {
+      const gameRef = ref(rtdb, `games/${cleanPin}`);
+      onValue(gameRef, (snapshot) => {
+        if (!active) return;
+        if (snapshot.exists()) {
+          lastKnownGame = snapshot.val();
+          callback(lastKnownGame);
+        }
+      });
+      firebaseUnsub = () => off(gameRef);
+    } catch {
+      // ignore
+    }
+  }
+
   return () => {
     active = false;
     clearInterval(pollInterval);
-    if (channel) {
-      channel.close();
-    }
+    if (channel) channel.close();
+    if (firebaseUnsub) firebaseUnsub();
   };
 }
 
